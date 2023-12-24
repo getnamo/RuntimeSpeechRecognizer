@@ -5,4 +5,5 @@
 /Binaries/
 
 # Content folder, because it contains language models that are too large
-/Content/
+/Content/*.bin
+/Content/LanguageModel.uasset
