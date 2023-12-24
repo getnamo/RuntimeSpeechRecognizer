@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "HAL/Platform.h"
+
 #ifndef restrict
 #define restrict
 #endif
@@ -23,15 +25,6 @@
 #define GGML_BIG_ENDIAN
 #endif
 
-#if defined(__aarch64__) || defined(_M_ARM64) || defined(_M_ARM)
-#ifndef __ARM_NEON
-#define __ARM_NEON 1
-#endif
-#ifndef __aarch64__
-#define __aarch64__ 1
-#endif
-#endif
-
 // Microsoft Visual Studio
 #if defined(_MSC_VER) && !defined(__clang__)
 
@@ -47,8 +40,13 @@
 #if !defined(__AVX__) && (_MSC_VER >= 1700 && defined(__SSE2__))
 #define __AVX__ 1
 #endif
-#if !defined(__AVX2__) && (_MSC_VER >= 1800 && defined(__SSE2__))
+#if !defined(__AVX2__) && ((_MSC_VER >= 1800 && defined(__SSE2__)) \
+|| (defined(PLATFORM_ALWAYS_HAS_AVX_2) && PLATFORM_ALWAYS_HAS_AVX_2))
 #define __AVX2__ 1
+#endif
+
+#if !defined(__AVX512F__) && defined(PLATFORM_ALWAYS_HAS_AVX_512) && PLATFORM_ALWAYS_HAS_AVX_512
+#define __AVX512F__ 1
 #endif
 
 /* AVX512 requires VS 15.3 */

@@ -143,6 +143,7 @@ bool FWhisperSpeechRecognizerState::Init(uint8* BulkDataPtr, int64 BulkDataSize,
 
 void FWhisperSpeechRecognizerState::Release()
 {
+	FScopeLock Lock(&ReleaseGuard);
 	if (WhisperContext)
 	{
 		whisper_free(WhisperContext);
@@ -359,13 +360,7 @@ FSpeechRecognizerThread::FSpeechRecognizerThread()
 
 FSpeechRecognizerThread::~FSpeechRecognizerThread()
 {
-	StopThread();
-
-	if (Thread.IsValid())
-	{
-		Thread->WaitForCompletion();
-		Thread.Reset();
-	}
+	ReleaseMemory();
 }
 
 TFuture<bool> FSpeechRecognizerThread::StartThread()
@@ -512,7 +507,7 @@ void FSpeechRecognizerThread::StopThread()
 		{
 			if (ThisShared)
 			{
-				ThisShared->Thread.Reset();
+				ThisShared->ReleaseMemory();
 			}
 		});
 	}
@@ -735,8 +730,10 @@ uint32 FSpeechRecognizerThread::Run()
 					UE_LOG(LogRuntimeSpeechRecognizer, Error, TEXT("Failed to get shared instance"));
 					return;
 				}
+				UE_LOG(LogRuntimeSpeechRecognizer, Log, TEXT("Speech recognition progress: %d"), 100);
 				if (ThisShared->LastProgress < 100)
 				{
+					ThisShared->LastProgress = 100;
 					ThisShared->OnRecognitionProgress.Broadcast(100);
 				}
 				ThisShared->OnRecognitionFinished.Broadcast();
@@ -1208,8 +1205,8 @@ void FSpeechRecognizerThread::LoadLanguageModel(TFunction<void(bool, uint8*, int
 
 void FSpeechRecognizerThread::ReleaseMemory()
 {
-	WhisperState.Release();
 	Thread.Reset();
+	WhisperState.Release();
 }
 
 void FSpeechRecognizerThread::ReportError(const FString& ShortErrorMessage, const FString& LongErrorMessage)
