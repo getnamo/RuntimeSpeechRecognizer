@@ -1,4 +1,4 @@
-﻿// Georgy Treshchev 2023.
+﻿// Georgy Treshchev 2024.
 
 #include "SpeechRecognizer.h"
 #include "SpeechRecognizerDefines.h"
@@ -200,4 +200,9 @@ bool USpeechRecognizer::SetSuppressNonSpeechTokens(bool Value)
 bool USpeechRecognizer::SetBeamSize(int32 Value)
 {
 	return Thread->SetBeamSize(Value);
+}
+
+bool USpeechRecognizer::SetInitialPrompt(const FString& Value)
+{
+	return Thread->SetInitialPrompt(Value);
 }

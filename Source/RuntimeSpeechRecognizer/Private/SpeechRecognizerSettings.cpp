@@ -1,4 +1,4 @@
-﻿// Georgy Treshchev 2023.
+﻿// Georgy Treshchev 2024.
 
 #include "SpeechRecognizerSettings.h"
 #include "SpeechRecognizerDefines.h"
@@ -30,7 +30,7 @@ FString USpeechRecognizerSettings::GetLanguageModelAssetName() const
 
 FString USpeechRecognizerSettings::GetLanguageModelPackagePath() const
 {
-	return TEXT("/RuntimeSpeechRecognizer");
+	return TEXT("/RuntimeSpeechRecognizer/LanguageModels");
 }
 
 FString USpeechRecognizerSettings::GetLanguageModelFullPackagePath() const
