@@ -5,6 +5,12 @@ using System.IO;
 
 public class RuntimeSpeechRecognizer : ModuleRules
 {
+
+	private string PluginLibPath
+	{
+		get { return Path.GetFullPath(Path.Combine(ModuleDirectory, "../../ThirdParty/LlamaCpp")); }
+	}
+
 	public RuntimeSpeechRecognizer(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
@@ -50,5 +56,29 @@ public class RuntimeSpeechRecognizer : ModuleRules
 		}
 
 		PrivateIncludePaths.Add(Path.Combine(ModuleDirectory, "..", "ThirdParty", "whisper.cpp"));
+
+		if (Target.Platform == UnrealTargetPlatform.Win64)
+		{
+			PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64", "llama.lib"));
+			PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64", "ggml_static.lib"));
+			//We do not use shared dll atm
+			//PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64", "ggml_shared.lib"));
+
+			//toggle this on for cuda build
+			bool bUseCuda = true;
+			if (bUseCuda)
+			{
+				//These are usually found in NVIDIA GPU Computing Toolkit\CUDA\v12.2\lib\x64
+				PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64", "cudart.lib"));
+				PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64", "cublas.lib"));
+				PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64", "cuda.lib"));
+			}
+
+			string WinLibDLLPath = Path.Combine(PluginLibPath, "Win64");
+
+			//We do not use shared dll atm
+			//RuntimeDependencies.Add("$(BinaryOutputDir)/llama.dll", Path.Combine(WinLibDLLPath, "llama.dll));
+			//RuntimeDependencies.Add("$(BinaryOutputDir)/ggml_shared.dll", Path.Combine(WinLibDLLPath, "ggml_shared.dll"));
+		}
 	}
 }

@@ -85,13 +85,13 @@ THIRD_PARTY_INCLUDES_START
 extern "C"
 {
 #include "ggml.h"
-#include "ggml.c"
-//#include "ggml-alloc.h"
-#include "ggml-alloc.c"
-//#include "ggml-quants.h"
-#include "ggml-quants.c"
-//#include "ggml-backend.h"
-#include "ggml-backend.c"
+	//Getnamo hack: Separate DLLs so we need this in editor, for development rely on the ggml defined in Llama-Unreal
+/*#if WITH_EDITOR
+	#include "ggml.c"
+	#include "ggml-alloc.c"
+	#include "ggml-quants.c"
+	#include "ggml-backend.c"
+#endif*/
 }
 
 THIRD_PARTY_INCLUDES_END
