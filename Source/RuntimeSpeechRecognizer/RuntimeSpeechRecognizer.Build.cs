@@ -60,7 +60,7 @@ public class RuntimeSpeechRecognizer : ModuleRules
 		if (Target.Platform == UnrealTargetPlatform.Win64)
 		{
 			//toggle this on for cuda build - copied from llama-unreal
-			bool bUseCuda = true;
+			bool bUseCuda = false;
 			if (bUseCuda)
 			{
 				//NB: Creates cuda runtime .dll dependencies, proper import path not defined yet
