@@ -56,7 +56,13 @@ void WhisperNewTextSegmentCallback(whisper_context* WhisperContext, whisper_stat
 	for (int32 Index = StartIndex; Index < TotalSegmentCount; ++Index)
 	{
 		const char* TextPerSegment = whisper_full_get_segment_text(WhisperContext, static_cast<int>(Index));
-		FString TextPerSegment_String = UTF8_TO_TCHAR(TextPerSegment);
+		// StringCast from UTF8CHAR to TCHAR is not supported in UE 5.0 and older
+#if UE_VERSION_OLDER_THAN(5, 1, 0)
+		auto TextPerSegment_TCHAR = StringCast<TCHAR>((const ANSICHAR*)TextPerSegment);
+#else
+		auto TextPerSegment_TCHAR = StringCast<TCHAR>((const UTF8CHAR*)TextPerSegment);
+#endif
+		FString TextPerSegment_String = TextPerSegment_TCHAR.Get();
 
 		AsyncTask(ENamedThreads::GameThread, [SpeechRecognizerSharedPtr, TextPerSegment_String = MoveTemp(TextPerSegment_String)]() mutable
 		{
@@ -317,6 +323,7 @@ bool FSpeechRecognizerThread::FPendingAudioData::AddAudio(Audio::FAlignedFloatBu
 
 int64 FSpeechRecognizerThread::FPendingAudioData::GetTotalMixedAndResampledSize() const
 {
+	FScopeLock Lock(&DataGuard);
 	return TotalMixedAndResampledSize;
 }
 
@@ -636,7 +643,6 @@ void FSpeechRecognizerThread::ProcessPCMData(Audio::FAlignedFloatBuffer PCMData,
 			return;
 		}
 		AudioQueue.Enqueue(MoveTemp(PendingAudioData));
-		bIsFinished.AtomicSet(false);
 		UE_LOG(LogRuntimeSpeechRecognizer, Log, TEXT("Enqueued audio data from the pending audio to the queue of the speech recognizer as the last data (num of samples: %d)"), NumOfQueuedSamples);
 	}
 	else if (RecognitionParameters.StepSizeMs > 0)
@@ -675,7 +681,6 @@ void FSpeechRecognizerThread::ProcessPCMData(Audio::FAlignedFloatBuffer PCMData,
 				return;
 			}
 			AudioQueue.Enqueue(MoveTemp(PendingAudioData));
-			bIsFinished.AtomicSet(false);
 			UE_LOG(LogRuntimeSpeechRecognizer, Log, TEXT("Enqueued audio data from the pending audio to the queue of the speech recognizer (num of samples: %d)"), NumOfQueuedSamples);
 		}
 	}
@@ -683,7 +688,6 @@ void FSpeechRecognizerThread::ProcessPCMData(Audio::FAlignedFloatBuffer PCMData,
 	{
 		const int32 NumOfQueuedSamples = PCMData.Num();
 		AudioQueue.Enqueue(MoveTemp(PCMData));
-		bIsFinished.AtomicSet(false);
 		UE_LOG(LogRuntimeSpeechRecognizer, Log, TEXT("Enqueued audio data from the pending audio to the queue of the speech recognizer as the last data (num of samples: %d)"), NumOfQueuedSamples);
 	}
 }
@@ -732,7 +736,6 @@ void FSpeechRecognizerThread::ForceProcessPendingAudioData()
 	}
 
 	AudioQueue.Enqueue(MoveTemp(PendingAudioData));
-	bIsFinished.AtomicSet(false);
 	UE_LOG(LogRuntimeSpeechRecognizer, Log, TEXT("Enqueued audio data from the pending audio to the queue of the speech recognizer as the last data (num of samples: %d)"), NumOfQueuedSamples);
 }
 
@@ -782,6 +785,15 @@ uint32 FSpeechRecognizerThread::Run()
 		Audio::FAlignedFloatBuffer NewQueuedBuffer;
 		while (AudioQueue.Dequeue(NewQueuedBuffer))
 		{
+			bIsFinished.AtomicSet(false);
+
+			// Resize the buffer to the minimum required size (1 second, plus 10% more due to a minor bug in checking the buffer size)
+			// see https://github.com/ggerganov/whisper.cpp/issues/39
+			constexpr float MinBufferDurationSec = 1.1;
+			if (NewQueuedBuffer.Num() < WHISPER_SAMPLE_RATE * MinBufferDurationSec)
+			{
+				NewQueuedBuffer.AddZeroed(WHISPER_SAMPLE_RATE * MinBufferDurationSec - NewQueuedBuffer.Num());
+			}
 			if (whisper_full_parallel(WhisperState.WhisperContext, *WhisperState.WhisperParameters, NewQueuedBuffer.GetData(), NewQueuedBuffer.Num(), 1) != 0)
 			{
 				UE_LOG(LogRuntimeSpeechRecognizer, Error, TEXT("Failed to process audio data with the size of %d samples to the whisper recognizer"), NewQueuedBuffer.Num());
@@ -810,6 +822,7 @@ uint32 FSpeechRecognizerThread::Run()
 					ThisShared->OnRecognitionProgress.Broadcast(100);
 				}
 				ThisShared->OnRecognitionFinished.Broadcast();
+				UE_LOG(LogRuntimeSpeechRecognizer, Log, TEXT("Speech recognition finished"));
 			});
 		}
 	}
@@ -878,6 +891,11 @@ FSpeechRecognitionParameters FSpeechRecognizerThread::GetNonStreamingDefaults()
 FSpeechRecognitionParameters FSpeechRecognizerThread::GetStreamingDefaults()
 {
 	return FSpeechRecognitionParameters::GetStreamingDefaults();
+}
+
+FSpeechRecognitionParameters FSpeechRecognizerThread::GetRecognitionParameters() const
+{
+	return RecognitionParameters;
 }
 
 bool FSpeechRecognizerThread::SetNonStreamingDefaults()
@@ -1260,7 +1278,6 @@ void FSpeechRecognizerThread::LoadLanguageModel(FOnLanguageModelLoaded&& OnLoadL
 				}
 
 				USpeechRecognizerModel* SpeechRecognizerModel = LazySpeechRecognizerModel.Get();
-				SpeechRecognizerModel->SetInternalFlags(EInternalObjectFlags::Async);
 
 				uint8* ModelBulkDataPtr = nullptr;
 				SpeechRecognizerModel->LanguageModelBulkData.GetCopy(reinterpret_cast<void**>(&ModelBulkDataPtr), true);
@@ -1282,11 +1299,6 @@ void FSpeechRecognizerThread::LoadLanguageModel(FOnLanguageModelLoaded&& OnLoadL
 						UE_LOG(LogRuntimeSpeechRecognizer, Error, TEXT("Failed to get shared instance"));
 						FMemory::Free(ModelBulkDataPtr);
 						return;
-					}
-
-					if (SpeechRecognizerModel->IsValidLowLevel())
-					{
-						SpeechRecognizerModel->ClearInternalFlags(EInternalObjectFlags::Async);
 					}
 					OnLoadLanguageModel(true, ModelBulkDataPtr, ModelBulkDataSize);
 				});

@@ -305,6 +305,12 @@ public:
 	static FSpeechRecognitionParameters GetStreamingDefaults();
 
 	/**
+	 * Returns the current recognition parameters
+	 * @return The current recognition parameters
+	 */
+	FSpeechRecognitionParameters GetRecognitionParameters() const;
+
+	/**
 	 * Sets the default parameters suitable for non-streaming speech recognition
 	 *
 	 * @return True if the parameters were set successfully, false otherwise
@@ -527,7 +533,7 @@ private:
 			{
 				FScopeLock Lock(&DataGuard);
 				AudioDataMap = MoveTemp(Other.AudioDataMap);
-				TotalMixedAndResampledSize.store(Other.TotalMixedAndResampledSize);
+				TotalMixedAndResampledSize = Other.TotalMixedAndResampledSize;
 			}
 			return *this;
 		}
@@ -538,7 +544,7 @@ private:
 			{
 				FScopeLock Lock(&DataGuard);
 				AudioDataMap = Other.AudioDataMap;
-				TotalMixedAndResampledSize.store(Other.TotalMixedAndResampledSize);
+				TotalMixedAndResampledSize = Other.TotalMixedAndResampledSize;
 			}
 			return *this;
 		}
@@ -577,7 +583,7 @@ private:
 		TMap<TPair<float /*SampleRate*/, uint32 /*NumOfChannels*/>, Audio::FAlignedFloatBuffer> AudioDataMap;
 
 		/** Estimated total size of the mixed and resampled audio data */
-		std::atomic<int64> TotalMixedAndResampledSize{ 0 };
+		int64 TotalMixedAndResampledSize = 0;
 
 		/** Data guard (mutex) for thread safety of the audio data map */
 		mutable FCriticalSection DataGuard;
