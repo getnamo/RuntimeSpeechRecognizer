@@ -63,14 +63,22 @@ public class RuntimeSpeechRecognizer : ModuleRules
 			bool bUseCuda = true;
 			if (bUseCuda)
 			{
+				PublicDelayLoadDLLs.Add("ggml.dll");
+				PublicDelayLoadDLLs.Add("llama.dll");
+
+				string WinLibDLLPath = Path.Combine(PluginLibPath, "Win64/Cuda");
+
+				RuntimeDependencies.Add("$(BinaryOutputDir)/ggml.dll", Path.Combine(WinLibDLLPath, "ggml.dll"));
+				RuntimeDependencies.Add("$(BinaryOutputDir)/llama.dll", Path.Combine(WinLibDLLPath, "llama.dll"));
+
 				//NB: Creates cuda runtime .dll dependencies, proper import path not defined yet
 				//These are usually found in NVIDIA GPU Computing Toolkit\CUDA\v12.2\lib\x64
-				PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64/Cuda", "cudart.lib"));
-				PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64/Cuda", "cublas.lib"));
-				PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64/Cuda", "cuda.lib"));
+				//PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64/Cuda", "cudart.lib"));
+				//PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64/Cuda", "cublas.lib"));
+				//PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64/Cuda", "cuda.lib"));
 
-				PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64/Cuda", "llama.lib"));
-				PublicAdditionalLibraries.Add(Path.Combine(PluginLibPath, "Win64/Cuda", "ggml_static.lib"));
+				PublicAdditionalLibraries.Add(Path.Combine(WinLibDLLPath, "llama.lib"));
+				PublicAdditionalLibraries.Add(Path.Combine(WinLibDLLPath, "ggml.lib"));
 			}
 			else
 			{
