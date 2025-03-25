@@ -263,7 +263,7 @@ void FSpeechRecognitionParameters::FillWhisperStateParameters(FWhisperSpeechReco
 	WhisperState.WhisperParameters->n_threads = NumOfThreads > 0 ? NumOfThreads : (FPlatformProcess::SupportsMultithreading() ? FMath::Min(6, FPlatformMisc::NumberOfCoresIncludingHyperthreads()) : 1);
 
 	WhisperState.WhisperParameters->suppress_blank = bSuppressBlank;
-	WhisperState.WhisperParameters->suppress_non_speech_tokens = bSuppressNonSpeechTokens;
+	WhisperState.WhisperParameters->suppress_nst = bSuppressNonSpeechTokens;
 
 	WhisperState.WhisperParameters->beam_search.beam_size = BeamSize;
 

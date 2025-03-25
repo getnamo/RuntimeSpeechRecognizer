@@ -5,16 +5,17 @@ using System.IO;
 
 public class RuntimeSpeechRecognizer : ModuleRules
 {
+	private string WhisperLibPath
+	{
+		get { return Path.GetFullPath(Path.Combine(ModuleDirectory, "../ThirdParty/whisper.cpp/Lib/Win64/")); }
+	}
+
 	public RuntimeSpeechRecognizer(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		
 		// Enable CPU instruction sets
-#if UE_5_3_OR_LATER
 		MinCpuArchX64 = MinimumCpuArchitectureX64.Default;
-#else
-		bUseAVX = true;
-#endif
 
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
@@ -49,5 +50,12 @@ public class RuntimeSpeechRecognizer : ModuleRules
 		}
 
 		PrivateIncludePaths.Add(Path.Combine(ModuleDirectory, "..", "ThirdParty", "whisper.cpp"));
+
+
+		PublicAdditionalLibraries.Add(Path.Combine(WhisperLibPath, "ggml.lib"));
+		PublicAdditionalLibraries.Add(Path.Combine(WhisperLibPath, "ggml-base.lib"));
+		PublicAdditionalLibraries.Add(Path.Combine(WhisperLibPath, "ggml-cpu.lib"));
+		//PublicAdditionalLibraries.Add(Path.Combine(WhisperLibPath, "ggml-vulkan.lib"));
+
 	}
 }
