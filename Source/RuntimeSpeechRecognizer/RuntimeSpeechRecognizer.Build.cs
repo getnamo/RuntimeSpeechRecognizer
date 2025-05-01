@@ -55,7 +55,7 @@ public class RuntimeSpeechRecognizer : ModuleRules
 		PublicAdditionalLibraries.Add(Path.Combine(WhisperLibPath, "ggml.lib"));
 		PublicAdditionalLibraries.Add(Path.Combine(WhisperLibPath, "ggml-base.lib"));
 		PublicAdditionalLibraries.Add(Path.Combine(WhisperLibPath, "ggml-cpu.lib"));
-		//PublicAdditionalLibraries.Add(Path.Combine(WhisperLibPath, "ggml-vulkan.lib"));
+		PublicAdditionalLibraries.Add(Path.Combine(WhisperLibPath, "ggml-vulkan.lib"));
 
 	}
 }
