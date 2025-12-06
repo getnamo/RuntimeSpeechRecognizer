@@ -5358,13 +5358,13 @@ struct whisper_vad_segments * whisper_vad_segments_from_probs(
 
     // Allocate final segments
     std::vector<whisper_vad_segment> segments;
-    if (speeches.size() > 0) {
-        try {
-            segments.resize(speeches.size());
-        } catch (const std::bad_alloc &) {
+
+    if (!speeches.empty()) {
+        if (segments.max_size() < speeches.size()) {
             WHISPER_LOG_ERROR("%s: failed to allocate memory for final segments\n", __func__);
             return nullptr;
         }
+        segments.resize(speeches.size());
     }
 
     // Apply padding to segments and copy to final segments
@@ -6675,12 +6675,22 @@ static bool whisper_vad(
         WHISPER_LOG_INFO("%s: total duration of speech segments: %.2f seconds\n",
                         __func__, (float)filtered_n_samples / WHISPER_SAMPLE_RATE);
 
-        try {
+        if (total_samples_needed > 0) {
+
+            // 1. Try allocating the needed memory manually
+            float* test_alloc = new (std::nothrow) float[total_samples_needed];
+            if (!test_alloc) {
+                WHISPER_LOG_ERROR("%s: failed to allocate memory for filtered samples\n", __func__);
+                whisper_vad_free_segments(vad_segments);
+                return false;
+            }
+
+            // If we get here, allocation succeeded → free the test block
+            delete[] test_alloc;
+
+            // 2. Now try resizing the std::vector
+            //    (Very likely to succeed since the test allocation succeeded)
             filtered_samples.resize(total_samples_needed);
-        } catch (const std::bad_alloc & /* e */) {
-            WHISPER_LOG_ERROR("%s: failed to allocate memory for filtered samples\n", __func__);
-            whisper_vad_free_segments(vad_segments);
-            return false;
         }
 
         int offset = 0;
