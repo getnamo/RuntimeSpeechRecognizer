@@ -1,3 +1,9 @@
+## Fork Archived
+
+Replaced with [LlamaWhisper](https://github.com/getnamo/Llama-Unreal/tree/main/Source/LlamaWhisper) modules inside of https://github.com/getnamo/Llama-Unreal/ plugin.
+
+##
+
 <a href="https://github.com/gtreshchev/RuntimeSpeechRecognizer/blob/main/LICENSE">![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)</a>
 <a href="https://georgy.dev/discord">![Discord](https://img.shields.io/discord/1055168498919284786.svg?label=Discord&logo=discord&color=7289DA&labelColor=2C2F33)</a>
 <a href="https://www.unrealengine.com/">![Unreal Engine](https://img.shields.io/badge/Unreal-4.27%2B-dea309)</a>
