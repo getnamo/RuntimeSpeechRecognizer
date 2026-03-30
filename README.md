@@ -1,6 +1,6 @@
 ## Fork Archived
 
-Replaced with [LlamaWhisper](https://github.com/getnamo/Llama-Unreal/tree/main/Source/LlamaWhisper) modules inside of https://github.com/getnamo/Llama-Unreal/ plugin.
+Replaced with the [LlamaWhisper](https://github.com/getnamo/Llama-Unreal/tree/main/Source/LlamaWhisper) module inside of https://github.com/getnamo/Llama-Unreal/ plugin.
 
 ##
 
